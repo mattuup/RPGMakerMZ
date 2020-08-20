@@ -38,7 +38,7 @@
  */
 
 var Imported = Imported || {};
-Imported.hikaeMZ = true;
+Imported.MAT_LoadComSim = true;
 
 (() => {
 
