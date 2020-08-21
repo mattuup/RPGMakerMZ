@@ -92,10 +92,8 @@ Game_Interpreter.prototype.command201 = function(params) {
 //更新後のロード後の挙動改善を含めている、期待しないフェードインをしないようにする。
 const _Scene_Map_fadeInForTransfer = Scene_Map.prototype.fadeInForTransfer;
 Scene_Map.prototype.fadeInForTransfer = function() {
-    _Scene_Map_fadeInForTransfer.call(this);
-    //console.log($gamePlayer.fadeType(), $gameTemp._NAFtrflag);
     if($gamePlayer.fadeType() !== undefined && $gameTemp._NAFtrflag < 2){
-        $gameScreen.startFadeIn(this.fadeSpeed());
+        _Scene_Map_fadeInForTransfer.call(this);
     }
     $gameTemp._NAFtrflag = 0;
 };
