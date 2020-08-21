@@ -7,7 +7,7 @@
 //=============================================================================
 
 /*:ja
- * @plugindesc ver1.00 ウインドウがアクティブでない時BGMとBGSの再生を止めます。
+ * @plugindesc ver1.01 ウインドウがアクティブでない時BGMとBGSの再生を止めます。
  * @author mattuup
  * @target MZ
  * @base PluginCommonBase
@@ -89,22 +89,39 @@ SceneManager.AFRisAudiostop = function() {
     return this._AFRstop;
 };
 
+//単にstopall→playbgmだと若干遅延するのでbufferを処理
 SceneManager.AFRstop = function() {
     if(this.AFRisAudiostop() || !this.AFRiscanAudiostopconfig()) return;
     const bgm = AudioManager.saveBgm();
     const bgs = AudioManager.saveBgs();
     this.AFRsetvalue(true, bgm, bgs);
-    AudioManager.stopAll();
+    AudioManager.stopMe();
+    AudioManager.stopSe();
+    if(AudioManager._bgmBuffer) AudioManager._bgmBuffer.stop();
+    if(AudioManager._bgsBuffer) AudioManager._bgsBuffer.stop();
 };
 
 SceneManager.AFRresume = function() {
     if(!this.AFRisAudiostop()) return;
     const bgm = this._AFRbgm;
     const bgs = this._AFRbgs;
-    if(bgm.name) AudioManager.playBgm(bgm, bgm.pos);
-    if(bgs.name) AudioManager.playBgs(bgs, bgs.pos);
+    if(bgm.name){
+        if(AudioManager._bgmBuffer && AudioManager.isCurrentBgm(bgm)) {
+            AudioManager._bgmBuffer.play(true, bgm.pos);
+        }else{
+            AudioManager.playBgm(bgm);
+        }
+    }
+    if(bgs.name){
+        if(AudioManager._bgsBuffer && AudioManager.isCurrentBgs(bgs)) {
+            AudioManager._bgsBuffer.play(true, bgs.pos);   
+        }else{
+            AudioManager.playBgs(bgs);
+        }
+    }
     this.AFRinitallmembers();
 };
+
 
 if(param.optionname){
 
