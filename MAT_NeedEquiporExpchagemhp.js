@@ -55,7 +55,7 @@
  */
 
 var Imported = Imported || {};
-Imported.MAT_NeedEquiporExpchagemhp = true;
+Imported[PluginManagerEx.findPluginName(document.currentScript)] = true;
 
 (() => {
 

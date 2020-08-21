@@ -80,7 +80,7 @@
  */
 
 var Imported = Imported || {};
-Imported.MAT_EnemyPaper = true;
+Imported[PluginManagerEx.findPluginName(document.currentScript)] = true;
 
 (() => {
 

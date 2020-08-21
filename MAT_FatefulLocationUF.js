@@ -48,7 +48,7 @@
  */
 
 var Imported = Imported || {};
-Imported.MAT_FatefulLocationUF = true;
+Imported[PluginManagerEx.findPluginName(document.currentScript)] = true;
 
 (() => {
 

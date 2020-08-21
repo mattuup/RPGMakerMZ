@@ -46,7 +46,7 @@
  */
 
 var Imported = Imported || {};
-Imported.hikaeMZ = true;
+Imported[PluginManagerEx.findPluginName(document.currentScript)] = true;
 
 (() => {
 

@@ -38,7 +38,7 @@
  */
 
 var Imported = Imported || {};
-Imported.MAT_LoadComSim = true;
+Imported[PluginManagerEx.findPluginName(document.currentScript)] = true;
 
 (() => {
 

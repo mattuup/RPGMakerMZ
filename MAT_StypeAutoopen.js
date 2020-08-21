@@ -10,6 +10,8 @@
  * @plugindesc ver1.00 スキルタイプ追加の仕様変更
  * @author mattuup
  * @target MZ
+ * @base PluginCommonBase
+ * @orderAfter PluginCommonBase
  * @url https://github.com/mattuup/RPGMakerMZ
  *
  * @help
@@ -43,7 +45,7 @@
  */
 
 var Imported = Imported || {};
-Imported.MAT_StypeAutoopen = true;
+Imported[PluginManagerEx.findPluginName(document.currentScript)] = true;
 
 (() => {
 
