@@ -7,7 +7,7 @@
 //=============================================================================
 
 /*:ja
- * @plugindesc ver1.00 移動先の自動実行でフェードアウトママ
+ * @plugindesc ver1.01 移動先の自動実行でフェードアウトママ
  * @author mattuup
  * @target MZ
  * @base PluginCommonBase
@@ -34,6 +34,7 @@
  * ※フェードインしたいときは通常通りその実行内容で
  * 　イベントコマンド「フェードイン」によってフェードインさせてください。
  * 
+ * ver1.01　少し修正。
  * 
  */
 
@@ -76,24 +77,22 @@ Game_Event.prototype.NAFcodecheck = function(codenum) {
 };
 
 
-//Scene_Map.prototype.fadeOutForTransferではフェードアウトが間に合わない。
-const _Game_Interpreter_command201 = Game_Interpreter.prototype.command201;
-Game_Interpreter.prototype.command201 = function(params) {
-    const ft = params[5];
-    $gameTemp._NAFtrflag = 0;
-    if (!$gameParty.inBattle() && !$gameMessage.isBusy() && ft !== 2) {
-        $gameScreen.startFadeOut(this.fadeSpeed(), ft === 1);
-        $gameTemp._NAFtrflag = 1;
+const _Scene_Map_fadeOutForTransfer = Scene_Map.prototype.fadeOutForTransfer;
+Scene_Map.prototype.fadeOutForTransfer = function() {
+    _Scene_Map_fadeOutForTransfer.call(this);
+    switch ($gamePlayer.fadeType()) {
+        case 0:
+        case 1:
+            $gameTemp._NAFtrflag = 1;
+            $gameScreen.startFadeOut(this.fadeSpeed());
+            break;
     }
-    return _Game_Interpreter_command201.call(this, params);
 };
 
-
-//更新後のロード後の挙動改善を含めている、期待しないフェードインをしないようにする。
+//更新後のロード時、強制でフェードインしないようにする。
 const _Scene_Map_fadeInForTransfer = Scene_Map.prototype.fadeInForTransfer;
 Scene_Map.prototype.fadeInForTransfer = function() {
     _Scene_Map_fadeInForTransfer.call(this);
-    //console.log($gamePlayer.fadeType(), $gameTemp._NAFtrflag);
     if($gamePlayer.fadeType() !== undefined && $gameTemp._NAFtrflag < 2){
         $gameScreen.startFadeIn(this.fadeSpeed());
     }
