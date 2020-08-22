@@ -7,7 +7,7 @@
 //=============================================================================
 
 /*:ja
- * @plugindesc ver1.01 移動先の自動実行でフェードアウトママ
+ * @plugindesc ver1.02 移動先の自動実行でフェードアウトママ
  * @author mattuup
  * @target MZ
  * @base PluginCommonBase
@@ -25,16 +25,17 @@
  * 
  * 
  * イベントコマンド「場所移動」を拡張します。
- * これにより移動した先に発生条件を満たした自動実行イベントがあり
- * その実行内容の先頭にフェードアウトがあれば
+ * これにより移動した先に発生条件を満たした異なる自動実行イベントがあり
+ * その実行内容の先頭に「画面のフェードアウト」があれば
  * イベントコマンド「場所移動」によるフェードインを行いません。
  * 原則フェードアウトは先頭に置いておく必要がありますが
  * 注釈はこれより上に置いてあっても大丈夫です。
  * ※「場所移動」のフェードが「なし」ではないこと。
  * ※フェードインしたいときは通常通りその実行内容で
- * 　イベントコマンド「フェードイン」によってフェードインさせてください。
+ * 　イベントコマンド「画面のフェードイン」によってフェードインさせてください。
  * 
- * ver1.01　少し修正。
+ * ver1.02　フェード（色）が反映されるようにしました。
+ * 次のフェードインまで継続します。
  * 
  */
 
@@ -52,6 +53,48 @@ Game_Temp.prototype.initialize = function() {
 };
 
 
+const _Game_Screen_clearFade = Game_Screen.prototype.clearFade;
+Game_Screen.prototype.clearFade = function() {
+    _Game_Screen_clearFade.call(this);
+    this.NAFclearFade();
+};
+
+Game_Screen.prototype.NAFclearFade = function() {
+    this._NAFfadecolor = this.NAFsetfadecolor();
+};
+
+Game_Screen.prototype.NAFfadecolor = function() {
+    const br = this.brightness();
+    if(br >= 255 || !this._NAFfadecolor){
+        return [0, 0, 0, 0];
+    }
+    const array = this._NAFfadecolor.clone();
+    array[3] = 255 - br;
+    return array;
+};
+
+Game_Screen.prototype.NAFsetfadecolor = function(color) {
+    if(color === true){
+        this._NAFfadecolor = [255, 255, 255, 0];
+    }else if(color){
+        this._NAFfadecolor = color.clone();
+    }else{
+        this._NAFfadecolor = [0, 0, 0, 0];
+    }
+};
+
+const _Game_Screen_startFadeOut = Game_Screen.prototype.startFadeOut;
+Game_Screen.prototype.startFadeOut = function(duration) {
+    _Game_Screen_startFadeOut.call(this, duration);
+    this.NAFsetfadecolor($gamePlayer.fadeType() === 1);
+};
+
+const _Game_Screen_startFadeIn = Game_Screen.prototype.startFadeIn
+Game_Screen.prototype.startFadeIn = function(duration) {
+    _Game_Screen_startFadeIn.call(this, duration);
+    $gamePlayer._fadeType = 0;
+};
+
 const _Game_Event_start = Game_Event.prototype.start;
 Game_Event.prototype.start = function() {
     _Game_Event_start.call(this);
@@ -68,11 +111,12 @@ Game_Event.prototype.NAFcodecheck = function(codenum) {
     if(codenum === 221){
         $gameTemp._NAFtrflag = 2;
         return true;
+    }else{
+        $gameTemp._NAFtrflag = 0;
     }
     if(codenum === 108 || codenum === 408){
         return false;
     }
-    $gameTemp._NAFtrflag = 0;
     return true;
 };
 
@@ -80,6 +124,11 @@ Game_Event.prototype.NAFcodecheck = function(codenum) {
 const _Scene_Map_fadeOutForTransfer = Scene_Map.prototype.fadeOutForTransfer;
 Scene_Map.prototype.fadeOutForTransfer = function() {
     _Scene_Map_fadeOutForTransfer.call(this);
+    this.NAFfadeOutForTransfer();
+};
+
+Scene_Map.prototype.NAFfadeOutForTransfer = function() {
+    $gameTemp._NAFtrflag = 0;
     switch ($gamePlayer.fadeType()) {
         case 0:
         case 1:
@@ -89,14 +138,32 @@ Scene_Map.prototype.fadeOutForTransfer = function() {
     }
 };
 
-//更新後のロード時、強制でフェードインしないようにする。
 const _Scene_Map_fadeInForTransfer = Scene_Map.prototype.fadeInForTransfer;
 Scene_Map.prototype.fadeInForTransfer = function() {
     _Scene_Map_fadeInForTransfer.call(this);
+    this.NAFfadeInForTransfer();
+};
+
+//更新後のロード時、強制でフェードインしないようにする。
+Scene_Map.prototype.NAFfadeInForTransfer = function() {
     if($gamePlayer.fadeType() !== undefined && $gameTemp._NAFtrflag < 2){
         $gameScreen.startFadeIn(this.fadeSpeed());
     }
     $gameTemp._NAFtrflag = 0;
+};
+
+
+const _Spriteset_Base_createOverallFilters = Spriteset_Base.prototype.createOverallFilters;
+Spriteset_Base.prototype.createOverallFilters = function() {
+    _Spriteset_Base_createOverallFilters.call(this);
+    this._NAFoverallColorFilter = new ColorFilter();
+    this.filters.push(this._NAFoverallColorFilter);
+};
+
+const _Spriteset_Base_updateOverallFilters = Spriteset_Base.prototype.updateOverallFilters;
+Spriteset_Base.prototype.updateOverallFilters = function() {
+    _Spriteset_Base_updateOverallFilters.call(this);
+    this._NAFoverallColorFilter.setBlendColor($gameScreen.NAFfadecolor());
 };
 
 
