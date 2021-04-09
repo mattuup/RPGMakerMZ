@@ -7,7 +7,7 @@
 //=============================================================================
 
 /*:ja
- * @plugindesc ver1.01 ウインドウがアクティブでない時BGMとBGSの再生を止めます。
+ * @plugindesc ver1.02 ウインドウがアクティブでない時BGMとBGSの再生を止めます。
  * @author mattuup
  * @target MZ
  * @base PluginCommonBase
@@ -21,7 +21,13 @@
  * 
  * @param initvalue
  * @desc オプションの初期値
- * （オプション画面で変更するまでの値）
+ * （オプション名が有効かつオプション画面で変更するまでの値）
+ * @type boolean
+ * @default true
+ * 
+ * @param useWebAudioMute
+ * @desc WebAudioの一部改変で行う方式に変更します。
+ * (ver1.02~,offの場合はver1.01以前の仕様になります。)
  * @type boolean
  * @default true
  *
@@ -38,6 +44,9 @@
  * 再びフォーカスされた時、BGMとBGSを再開します。
  * (画面の更新はデフォルトのままです。)
  * 
+ * パラメータ「useWebAudioMute」が有効かどうかで
+ * 動作が少し異なるので注意してください。
+ * 
  * 
  */
 
@@ -51,78 +60,109 @@ Imported[PluginManagerEx.findPluginName(document.currentScript)] = true;
 const script = document.currentScript;
 const param  = PluginManagerEx.createParameter(script);
 const AFRkey1 = "AFRisstop";
+const fadetime = 0;
 
 
-const _SceneManager_initialize = SceneManager.initialize;
-SceneManager.initialize = function() {
-    _SceneManager_initialize.call(this);
-    this.AFRinitallmembers();
-};
+if(param.useWebAudioMute){
+    
+    //以下ブロック内ほぼ再定義
+    WebAudio._onHide = function() {
+        if (this._shouldMuteOnHide()) {
+            this._fadeOut(fadetime);
+        }
+    };
 
-SceneManager.AFRinitallmembers = function() {
-    this.AFRsetvalue(false);
-};
+    WebAudio._onShow = function() {
+        if (this._shouldMuteOnHide()) {
+            this._fadeIn(fadetime);
+        }
+    };
 
-SceneManager.AFRsetvalue = function(stop, bgm, bgs) {
-    this._AFRstop = stop;
-    this._AFRbgm = bgm || {};
-    this._AFRbgs = bgs || {};
-};
+    //この再定義の関係でローカル環境のみ推奨。
+    WebAudio._shouldMuteOnHide = function() {
+        return ConfigManager.AFRisvalid();
+    };
 
-const _SceneManager_isGameActive = SceneManager.isGameActive;
-SceneManager.isGameActive = function() {
-    const def = _SceneManager_isGameActive.call(this);
-    if(def){
-        this.AFRresume();
-    }else{
-        this.AFRstop();
-    }
-    return def;
-};
+}else{
 
-SceneManager.AFRiscanAudiostopconfig = function() {
-    const config = ConfigManager[AFRkey1];
+    const _SceneManager_initialize = SceneManager.initialize;
+    SceneManager.initialize = function() {
+        _SceneManager_initialize.call(this);
+        this.AFRinitallmembers();
+    };
+
+    SceneManager.AFRinitallmembers = function() {
+        this.AFRsetvalue(false);
+    };
+
+    SceneManager.AFRsetvalue = function(stop, bgm, bgs) {
+        this._AFRstop = stop;
+        this._AFRbgm = bgm || {};
+        this._AFRbgs = bgs || {};
+    };
+
+    const _SceneManager_isGameActive = SceneManager.isGameActive;
+    SceneManager.isGameActive = function() {
+        const def = _SceneManager_isGameActive.call(this);
+        if(def){
+            this.AFRresume();
+        }else{
+            this.AFRstop();
+        }
+        return def;
+    };
+
+    SceneManager.AFRiscanAudiostopconfig = function() {
+        return ConfigManager.AFRisvalid();
+    };
+
+    SceneManager.AFRisAudiostop = function() {
+        return this._AFRstop;
+    };
+
+    //単にstopall→playbgmだと若干遅延するのでbufferを処理
+    SceneManager.AFRstop = function() {
+        if(this.AFRisAudiostop() || !this.AFRiscanAudiostopconfig()) return;
+        const bgm = AudioManager.saveBgm();
+        const bgs = AudioManager.saveBgs();
+        this.AFRsetvalue(true, bgm, bgs);
+        AudioManager.stopMe();
+        AudioManager.stopSe();
+        if(AudioManager._bgmBuffer) AudioManager._bgmBuffer.stop();
+        if(AudioManager._bgsBuffer) AudioManager._bgsBuffer.stop();
+    };
+
+    SceneManager.AFRresume = function() {
+        if(!this.AFRisAudiostop()) return;
+        const bgm = this._AFRbgm;
+        const bgs = this._AFRbgs;
+        if(bgm.name){
+            if(AudioManager._bgmBuffer && AudioManager.isCurrentBgm(bgm)) {
+                AudioManager._bgmBuffer.play(true, bgm.pos);
+            }else{
+                AudioManager.playBgm(bgm);
+            }
+        }
+        if(bgs.name){
+            if(AudioManager._bgsBuffer && AudioManager.isCurrentBgs(bgs)) {
+                AudioManager._bgsBuffer.play(true, bgs.pos);   
+            }else{
+                AudioManager.playBgs(bgs);
+            }
+        }
+        this.AFRinitallmembers();
+    };
+
+}
+
+
+//コンフィグ判定用、設定が存在しない場合は有効と同等。
+ConfigManager.AFRisvalid = function() {
+    const config = this[AFRkey1];
     return config || config === undefined;
 };
 
-SceneManager.AFRisAudiostop = function() {
-    return this._AFRstop;
-};
-
-//単にstopall→playbgmだと若干遅延するのでbufferを処理
-SceneManager.AFRstop = function() {
-    if(this.AFRisAudiostop() || !this.AFRiscanAudiostopconfig()) return;
-    const bgm = AudioManager.saveBgm();
-    const bgs = AudioManager.saveBgs();
-    this.AFRsetvalue(true, bgm, bgs);
-    AudioManager.stopMe();
-    AudioManager.stopSe();
-    if(AudioManager._bgmBuffer) AudioManager._bgmBuffer.stop();
-    if(AudioManager._bgsBuffer) AudioManager._bgsBuffer.stop();
-};
-
-SceneManager.AFRresume = function() {
-    if(!this.AFRisAudiostop()) return;
-    const bgm = this._AFRbgm;
-    const bgs = this._AFRbgs;
-    if(bgm.name){
-        if(AudioManager._bgmBuffer && AudioManager.isCurrentBgm(bgm)) {
-            AudioManager._bgmBuffer.play(true, bgm.pos);
-        }else{
-            AudioManager.playBgm(bgm);
-        }
-    }
-    if(bgs.name){
-        if(AudioManager._bgsBuffer && AudioManager.isCurrentBgs(bgs)) {
-            AudioManager._bgsBuffer.play(true, bgs.pos);   
-        }else{
-            AudioManager.playBgs(bgs);
-        }
-    }
-    this.AFRinitallmembers();
-};
-
-
+//以下オプション設定
 if(param.optionname){
 
     ConfigManager[AFRkey1] = param.initvalue;
