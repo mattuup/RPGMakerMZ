@@ -7,7 +7,7 @@
 //=============================================================================
 
 /*:ja
- * @plugindesc ver1.00 戦闘終了時に敵キャラのノートタグ記載のアクターを仲間にします。
+ * @plugindesc ver1.01 戦闘終了時に敵キャラのノートタグ記載のアクターを仲間にします。
  * @author mattuup
  * @target MZ
  * @base PluginCommonBase
@@ -73,7 +73,7 @@
  * 判定はバトル終了時に行われるのでそれまでに適用してください。
  * 
  * ※このプラグインの一部機能は
- * 既存のセーブデータを再開した時に期待する処理がされない場合があります。
+ * 既存（導入前）のセーブデータを再開した時に期待する処理がされない場合があります。
  * その場合はニューゲームまたはイベントテスト等から動作を確認してください。
  * なお、プラグインパラメータ「enableonce」がＯＦＦの場合でも
  * 一回仲間にしたアクターの記録自体はします。影響は判定のみです。
@@ -88,7 +88,8 @@
  * 例：<APaddrand:50> <APaddrand:1000>
  * 前者は50%の確率で仲間になります。後者は1000%。
  * 
- * ※仲間になるのは最初に判定に成功した一体のみとなります。(index順に判定。)
+ * ※仲間になるのは最初に判定に成功した一体のみとなります。
+ * (index順に判定。戦闘不能になった順番は関係しません。)
  * 
  */
 
@@ -101,6 +102,7 @@ Imported[PluginManagerEx.findPluginName(document.currentScript)] = true;
 
 const script = document.currentScript;
 const param  = PluginManagerEx.createParameter(script);
+
 
 PluginManagerEx.registerCommand(script, "APsetallrate", function(args) {
     $gameSystem.APsetallrate(args.allrate);
@@ -168,9 +170,11 @@ Game_System.prototype.APclearexcludeloser = function() {
     this._APexcludeloser = [];
 };
 
+//重複しないように。
 Game_System.prototype.APpushloser = function(id) {
-    if(this._APexcludeloser.includes(id)) return;
-    this._APexcludeloser.push(id);
+    const array = this.APexcludeloser();
+    if(array.includes(id)) return;
+    array.push(id);
 };
 
 
@@ -311,6 +315,7 @@ Spriteset_Battle.prototype.makeTargetSprites = function(targets) {
 };
 
 
+//メッセージ初期化タイミングにより
 const _Window_ChoiceList_callOkHandler = Window_ChoiceList.prototype.callOkHandler;
 Window_ChoiceList.prototype.callOkHandler = function() {
     _Window_ChoiceList_callOkHandler.call(this);
