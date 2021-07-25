@@ -7,7 +7,7 @@
 //=============================================================================
 
 /*:ja
- * @plugindesc ver1.00 戦闘終了時にノートタグ記載のアクターを仲間にします。
+ * @plugindesc ver1.00 戦闘終了時に敵キャラのノートタグ記載のアクターを仲間にします。
  * @author mattuup
  * @target MZ
  * @base PluginCommonBase
@@ -15,13 +15,13 @@
  * @url https://github.com/mattuup/RPGMakerMZ
  * 
  * @param animation
- * @desc 加入が可能である場合に
+ * @desc 起き上がった時に
  * その敵の表示と共に表示するアニメーションです。
  * @type animation
  * @default 0
  * 
  * @param text1
- * @desc 加入が決定した時のメッセージ１
+ * @desc 起き上がった時のメッセージ１
  * @default が起き上がった。
  * 
  * @param text2
@@ -33,7 +33,7 @@
  * @default 仲間にする
  * 
  * @param textforbid
- * @desc 加入が許可しない選択
+ * @desc 加入を許可しない選択
  * @default 拒否する
  *
  * @param enableonce
@@ -57,7 +57,7 @@
  * @default 0
  * @type number
  * @min 0
- * @max 10000
+ * @max 100000
  *
  * @help
  * 
@@ -88,7 +88,7 @@
  * 例：<APaddrand:50> <APaddrand:1000>
  * 前者は50%の確率で仲間になります。後者は1000%。
  * 
- * ※仲間になるのは最初に判定に成功した一体のみとなります。(index順に判定します。)
+ * ※仲間になるのは最初に判定に成功した一体のみとなります。(index順に判定。)
  * 
  */
 
@@ -183,7 +183,7 @@ Game_Enemy.prototype.isenableAddloser = function() {
     return this.APnoteloser("APaddrand") > 0 && this.APnoteloser("APaddactorId") > 0;
 };
 
-//これの加入確率
+//これの加入確率、APallrateは設定時に割っている。
 Game_Enemy.prototype.APallowrate = function() {
     return this.APnoteloser("APaddrand") * $gameSystem.APallrate() / 100;
 };
