@@ -7,12 +7,17 @@
 //=============================================================================
 
 /*:ja
- * @plugindesc ver1.03 移動先の自動実行でフェードアウトママ
+ * @plugindesc ver1.04 移動先の自動実行でフェードアウトママ
  * @author mattuup
  * @target MZ
  * @base PluginCommonBase
  * @orderAfter PluginCommonBase
  * @url https://github.com/mattuup/RPGMakerMZ
+ * 
+ * @param ignoreswitch
+ * @desc ｵﾝの間、このﾌﾟﾗｸﾞｲﾝの機能ではﾌｪｰﾄﾞｲﾝしません。ﾌｪｰﾄﾞｱｳﾄ中同マップ中で場所移動だけしたい場合などに使用してください。
+ * @type switch
+ * @default 0
  *
  * @help
  * 
@@ -22,7 +27,6 @@
  * 
  * 利用規約はMITライセンスの通り。
  * （NeedAutorunFade.js再録、記述の大幅見直し）
- * 
  * 
  * イベントコマンド「場所移動」を拡張します。
  * これにより移動した先に発生条件を満たした異なる自動実行イベントがあり
@@ -37,6 +41,8 @@
  * ver1.03　フェード（色）が反映されるようにしました。
  * 次のフェードインまで継続します。
  * 
+ * ver1.04  パラメータ追加
+ * 
  */
 
 var Imported = Imported || {};
@@ -45,6 +51,10 @@ Imported[PluginManagerEx.findPluginName(document.currentScript)] = true;
 (() => {
 
 'use strict';
+
+const script = document.currentScript;
+const param  = PluginManagerEx.createParameter(script);
+
 
 const _Game_Temp_initialize = Game_Temp.prototype.initialize;
 Game_Temp.prototype.initialize = function() {
@@ -148,7 +158,9 @@ Scene_Map.prototype.fadeInForTransfer = function() {
 //!$gameMap.isAnyEventStarting()は、移動前でなく、本当に現在のマップで実行しているイベントか確認する。
 Scene_Map.prototype.NAFfadeInForTransfer = function() {
     if($gamePlayer.fadeType() !== undefined && (!$gameMap.isAnyEventStarting() || $gameTemp._NAFtrflag < 2)){
-        $gameScreen.startFadeIn(this.fadeSpeed());
+        if(!(param.ignoreswitch > 0 && $gameSwitches.value(param.ignoreswitch))){
+            $gameScreen.startFadeIn(this.fadeSpeed());
+        }
     }
     $gameTemp._NAFtrflag = 0;
 };
