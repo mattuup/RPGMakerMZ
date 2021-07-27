@@ -7,7 +7,7 @@
 //=============================================================================
 
 /*:ja
- * @plugindesc ver1.01 戦闘終了時に敵キャラのノートタグ記載のアクターを仲間にします。
+ * @plugindesc ver1.02 戦闘終了時に敵キャラのノートタグ記載のアクターを仲間にします。
  * @author mattuup
  * @target MZ
  * @base PluginCommonBase
@@ -47,17 +47,31 @@
  * @type boolean
  * @default true
  * 
+ * @param validBattletest
+ * @desc データベースの戦闘テストでも起き上がり有効か。
+ * @type boolean
+ * @default true
+ * 
+ * @param defaultallrate
+ * @desc ニューゲーム後自動で代入される確率倍率（百分率）。
+ * プラグインコマンドで変更できる値と同様。
+ * @type number
+ * @min 0
+ * @max 100000
+ * @default 100
+ * 
  * @command APsetallrate
  * @text 確率倍率変更
- * @desc 本来仲間になる確率(ノートタグ設定)にかける値を変更します。
+ * @desc ノートタグで設定した確率にかける値を変更します。
+ * (その敵キャラのノートタグ設定*この値が最終的な確率。)
  *
  * @arg allrate
  * @text 確率倍率（百分率）
  * @desc 確率倍率（百分率）
- * @default 0
  * @type number
  * @min 0
  * @max 100000
+ * @default 0
  *
  * @help
  * 
@@ -68,25 +82,22 @@
  * 利用規約はMITライセンスの通り。
  * （AddPartyloser.js再録）
  * 
- * ※基本的にプラグインコマンドで確率倍率変更してください。
- * この初期値は0なので設定の必要あり。
- * 判定はバトル終了時に行われるのでそれまでに適用してください。
- * 
- * ※このプラグインの一部機能は
+ * ※このプラグインやプラグインコマンドの一部機能は
  * 既存（導入前）のセーブデータを再開した時に期待する処理がされない場合があります。
  * その場合はニューゲームまたはイベントテスト等から動作を確認してください。
  * なお、プラグインパラメータ「enableonce」がＯＦＦの場合でも
  * 一回仲間にしたアクターの記録自体はします。影響は判定のみです。
  * (Game_Party.prototype.addActor内で処理)
  * 
- * エネミーのノートタグ
+ * ---敵キャラのノートタグ---
+ * 
  * <APaddrand:x>
  * xには確率を百分率で入れてください。
  * <APaddactorId:x>
  * xは判定に成功した場合に仲間にしたいアクターのIDを入れてください。
  * 
- * 例：<APaddrand:50> <APaddrand:1000>
- * 前者は50%の確率で仲間になります。後者は1000%。
+ * 例：<APaddrand:50>
+ * 50%の確率で仲間になります。
  * 
  * ※仲間になるのは最初に判定に成功した一体のみとなります。
  * (index順に判定。戦闘不能になった順番は関係しません。)
@@ -130,7 +141,13 @@ BattleManager.toggleloserphase = function() {
 const _BattleManager_endBattle = BattleManager.endBattle;
 BattleManager.endBattle = function(result) {
     _BattleManager_endBattle.call(this, result);
-    if(result === 0) this.toggleloserphase();
+    this.APendBattleset(result);
+};
+
+BattleManager.APendBattleset = function(result) {
+    if(result === 0 && (param.validBattletest || !this.isBattleTest())){
+        this.toggleloserphase();
+    }
 };
 
 const _BattleManager_updatePhase = BattleManager.updatePhase;
@@ -149,7 +166,7 @@ BattleManager.APgainloser = function() {
 const _Game_System_initialize = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function() {
     _Game_System_initialize.call(this);
-    this.APsetallrate(0);
+    this.APsetallrate(param.defaultallrate);
     this.APclearexcludeloser();
 };
 
