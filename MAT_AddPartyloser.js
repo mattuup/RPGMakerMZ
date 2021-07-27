@@ -7,7 +7,7 @@
 //=============================================================================
 
 /*:ja
- * @plugindesc ver1.02 戦闘終了時に敵キャラのノートタグ記載のアクターを仲間にします。
+ * @plugindesc ver1.03 戦闘終了時に敵キャラのノートタグ記載のアクターを仲間にします。
  * @author mattuup
  * @target MZ
  * @base PluginCommonBase
@@ -97,7 +97,7 @@
  * xは判定に成功した場合に仲間にしたいアクターのIDを入れてください。
  * 
  * 例：<APaddrand:50>
- * 50%の確率で仲間になります。
+ * 戦闘勝利時に50%の確率で仲間になります。
  * 
  * ※仲間になるのは最初に判定に成功した一体のみとなります。
  * (index順に判定。戦闘不能になった順番は関係しません。)
@@ -311,7 +311,7 @@ Game_Troop.prototype.CanAddloser = function() {
 
 //中央に表示するときのアンカーに注意
 Sprite_Enemy.prototype.APdisplayposianime = function(animeId) {
-    animeId = Number(param.animation || 0);
+    animeId = Number(animeId || param.animation || 0);
     if(param.iscenterdisplay){
         this.anchor.x = 0.5;
         this.anchor.y = 0.5;
@@ -322,6 +322,7 @@ Sprite_Enemy.prototype.APdisplayposianime = function(animeId) {
 };
 
 
+//アニメーション再生により
 const _Spriteset_Battle_makeTargetSprites = Spriteset_Battle.prototype.makeTargetSprites;
 Spriteset_Battle.prototype.makeTargetSprites = function(targets) {
     const def = _Spriteset_Battle_makeTargetSprites.call(this, targets);
