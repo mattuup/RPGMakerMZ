@@ -7,7 +7,7 @@
 //=============================================================================
 
 /*:ja
- * @plugindesc ver1.00 能力値振りプラグイン
+ * @plugindesc ver1.01 能力値振りプラグイン
  * @author mattuup
  * @target MZ
  * @base PluginCommonBase
@@ -1140,8 +1140,10 @@ Scene_ATGrowing.prototype.createAntaresWakeInputWindow = function() {
     this._AntaresWakeInputWindow = new Window_AntaresWakeInput(rect);
     this._AntaresWakeInputWindow.setHandler("ok", this.onWakeok.bind(this));
     this._AntaresWakeInputWindow.setHandler("cancel", this.onendAntares.bind(this));
-    this._AntaresWakeInputWindow.setHandler("pagedown", this.nextActor.bind(this));
-    this._AntaresWakeInputWindow.setHandler("pageup", this.previousActor.bind(this));
+    if(this.needsPageButtons()){
+        this._AntaresWakeInputWindow.setHandler("pagedown", this.nextActor.bind(this));
+        this._AntaresWakeInputWindow.setHandler("pageup", this.previousActor.bind(this));
+    }
     this.addWindow(this._AntaresWakeInputWindow);
 };
 
@@ -1217,7 +1219,6 @@ Scene_ATGrowing.prototype.AntaresChangeActor = function() {
 };
 
 Scene_ATGrowing.prototype.onActorChange = function() {
-    if(!this.needsPageButtons()) return;
     Scene_MenuBase.prototype.onActorChange.call(this);
     this.AntaresChangeActor();
 };
